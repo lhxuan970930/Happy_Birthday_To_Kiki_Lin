@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Private Access</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;1,400;1,500&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Serif+TC:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  :root {
+    --navy-deep: #070d1f;
+    --navy-mid: #0c1631;
+    --slate-card: rgba(18, 29, 58, 0.72);
+    --champagne: #f3d9a4;
+    --champagne-bright: #faecd0;
+    --gold: #e6be73;
+    --cream: #f7f1e3;
+    --muted: rgba(243, 234, 216, 0.58);
+    --line: rgba(243, 217, 164, 0.18);
+    --line-strong: rgba(243, 217, 164, 0.42);
+    --err: #f4978e;
+    --ok: #a8e0b7;
+    --serif: "Noto Serif TC", "Songti TC", "PMingLiU", Georgia, serif;
+    --sans: "Noto Sans TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --italic: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: radial-gradient(circle at 78% 24%, rgba(44, 68, 122, 0.34) 0%, rgba(12, 22, 49, 0.92) 48%, #070d1f 100%);
+    color: var(--cream);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Animated starry night & orbital canvas */
+  #starCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+  }
+
+  /* Soft ambient radial glow matching the boutique night sky aesthetic */
+  .ambient-glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background:
+      radial-gradient(circle at 82% 22%, rgba(243, 217, 164, 0.09) 0%, rgba(243, 217, 164, 0) 42%),
+      radial-gradient(circle at 18% 82%, rgba(92, 124, 196, 0.10) 0%, rgba(92, 124, 196, 0) 48%);
+  }
+
+  /* Page shell matching the header + center + footer editorial layout */
+  #gateShell {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px clamp(20px, 5vw, 56px);
+    transition: opacity 0.55s ease;
+  }
+  #gateShell.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Top header with hairline divider */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .brand-star {
+    width: 18px;
+    height: 18px;
+    color: var(--champagne);
+    flex-shrink: 0;
+  }
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .brand-zh {
+    font-family: var(--serif);
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    color: var(--champagne-bright);
+  }
+  .brand-en {
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: rgba(15, 25, 52, 0.55);
+    color: var(--champagne);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(230, 190, 115, 0.85);
+  }
+
+  /* Center stationery card */
+  .center-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 0;
+  }
+
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    background: var(--slate-card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 40px 34px 36px;
+    text-align: center;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+      0 28px 70px rgba(3, 7, 18, 0.62),
+      inset 0 1px 0 rgba(243, 217, 164, 0.14);
+  }
+  /* Delicate inner stationery frame */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 10px;
+    border: 1px solid rgba(243, 217, 164, 0.09);
+    border-radius: 11px;
+    pointer-events: none;
+  }
+
+  .card-emblem {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid rgba(243, 217, 164, 0.34);
+    background: radial-gradient(circle, rgba(243, 217, 164, 0.16) 0%, rgba(18, 29, 58, 0.2) 72%);
+    color: var(--champagne);
+    margin-bottom: 20px;
+  }
+
+  .kicker {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.28em;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .title {
+    font-family: var(--serif);
+    font-size: clamp(24px, 4vw, 29px);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: var(--champagne-bright);
+    margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .subtitle {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 28px;
+  }
+
+  .google-btn {
+    position: relative;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 22px;
+    border-radius: 999px;
+    border: 1px solid rgba(243, 217, 164, 0.72);
+    background: linear-gradient(135deg, rgba(243, 217, 164, 0.94), rgba(230, 190, 115, 0.90));
+    color: #101935;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    box-shadow: 0 10px 28px rgba(230, 190, 115, 0.22);
+    transition: transform 0.18s ease, box-shadow 0.22s ease, filter 0.2s ease;
+  }
+  .google-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 34px rgba(230, 190, 115, 0.34);
+    filter: brightness(1.04);
+  }
+  .google-btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .google-btn:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+  }
+  .google-icon {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+  }
+
+  .helper-note {
+    margin-top: 16px;
+    font-size: 11.5px;
+    font-weight: 300;
+    color: rgba(243, 234, 216, 0.46);
+    letter-spacing: 0.05em;
+  }
+
+  .status {
+    min-height: 20px;
+    margin-top: 14px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--muted);
+    word-break: break-word;
+  }
+  .status.error {
+    color: var(--err);
+  }
+  .status.ok {
+    color: var(--ok);
+  }
+
+  /* Footer with hairline divider and italic serif sign-off */
+  .site-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: rgba(243, 234, 216, 0.45);
+    gap: 12px;
+  }
+  .footer-left {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .footer-sign {
+    font-family: var(--italic);
+    font-style: italic;
+    font-size: 15px;
+    color: rgba(243, 217, 164, 0.68);
+    letter-spacing: 0.04em;
+  }
+
+  /* Protected content full-screen mount */
+  #vaultFrame {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: var(--navy-deep);
+    z-index: 10;
+    display: none;
+  }
+  #vaultFrame.active {
+    display: block;
+  }
+  #signOutBtn {
+    position: fixed;
+    bottom: 16px;
+    right: 18px;
+    z-index: 20;
+    display: none;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: rgba(11, 19, 43, 0.72);
+    color: var(--champagne);
+    font-family: var(--sans);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.2s, border-color 0.2s;
+  }
+  #signOutBtn.active {
+    display: inline-flex;
+    align-items: center;
+  }
+  #signOutBtn:hover {
+    background: rgba(243, 217, 164, 0.16);
+    border-color: var(--champagne);
+  }
+
+  @media (max-width: 520px) {
+    .card {
+      padding: 32px 22px 28px;
+    }
+    .site-footer {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .footer-left {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="starCanvas" aria-hidden="true"></canvas>
+<div class="ambient-glow" aria-hidden="true"></div>
+
+<div id="gateShell">
+  <header class="site-header">
+    <div class="brand">
+      <svg class="brand-star" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z"/>
+      </svg>
+      <div class="brand-text">
+        <span class="brand-zh">星夜私藏</span>
+        <span class="brand-en">Private Collection</span>
+      </div>
+    </div>
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot"></span>
+      <span id="statusPillText">尚未驗證</span>
+    </div>
+  </header>
+
+  <main class="center-stage">
+    <section class="card" aria-labelledby="gateTitle">
+      <div class="card-emblem" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L14.1 9.9L22 12L14.1 14.1L12 22L9.9 14.1L2 12L9.9 9.9L12 2Z" fill="currentColor" fill-opacity="0.18"/>
+        </svg>
+      </div>
+      <div class="kicker">Private Invitation</div>
+      <h1 class="title" id="gateTitle">受邀者專屬頁面</h1>
+      <p class="subtitle">此處收錄了一段私密內容，<br>請先透過授權的 Google 帳號完成身分確認。</p>
+
+      <button type="button" class="google-btn" id="googleSignInBtn">
+        <svg class="google-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M21.8 12.23c0-.71-.06-1.4-.18-2.06H12v3.9h5.5a4.7 4.7 0 0 1-2.04 3.08v2.56h3.3c1.93-1.78 3.04-4.4 3.04-7.48z"/>
+          <path fill="currentColor" d="M12 22c2.75 0 5.06-.91 6.75-2.47l-3.3-2.56c-.91.61-2.08.98-3.45.98-2.66 0-4.91-1.8-5.72-4.21H2.87v2.64A10.2 10.2 0 0 0 12 22z"/>
+          <path fill="currentColor" d="M6.28 13.74a6.12 6.12 0 0 1 0-3.48V7.62H2.87a10.2 10.2 0 0 0 0 8.76l3.41-2.64z"/>
+          <path fill="currentColor" d="M12 6.05c1.5 0 2.84.51 3.9 1.52l2.92-2.92C17.05 2.99 14.75 2 12 2a10.2 10.2 0 0 0-9.13 5.62l3.41 2.64C7.09 7.85 9.34 6.05 12 6.05z"/>
+        </svg>
+        <span id="btnLabel">使用 Google 帳號進入 →</span>
+      </button>
+
+      <p class="helper-note">直接以原本的 Google 帳號登入，無需另外設定密碼</p>
+      <div class="status" id="statusMsg" role="status" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span class="footer-left">Encrypted Gateway</span>
+    <span class="footer-sign">Reserved for invited eyes only.</span>
+  </footer>
+</div>
+
+<iframe id="vaultFrame" title="Protected Content" allow="autoplay"></iframe>
+<button type="button" id="signOutBtn">登出</button>
+
+<!-- Firebase Compat SDK (pinned version for GitHub Pages) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<script>
+(() => {
+  'use strict';
+
+  // =========================================================================
+  // 1. Firebase 共用設定（與聖誕網頁共用同一個 for-kiki 專案）
+  // =========================================================================
+  const FIREBASE_CONFIG = {
+    apiKey: 'AIzaSyA-MFtQOYzJNxCx9I98ERcwRgoOFO1Zpr4',
+    authDomain: 'for-kiki.firebaseapp.com',
+    projectId: 'for-kiki',
+    storageBucket: 'for-kiki.firebasestorage.app',
+    messagingSenderId: '1079956903157',
+    appId: '1:1079956903157:web:fb10e1ffac2d15ccf0e1bc',
+    measurementId: 'G-N8K6PWLYKS'
+  };
+
+  // 授權帳號白名單（搭配 Firestore Rules 伺服器端鎖定）
+  const ALLOWED_EMAILS = [
+    'linkiki971101@gmail.com',
+    'lhxuan970930@gmail.com'
+  ];
+
+  // Firestore 獨立文件 ID（與 christmas_tree 分開存放，互不覆蓋）
+  const VAULT_COLLECTION = 'private_pages';
+  const VAULT_DOC_ID = 'happy_birthday';
+  const VAULT_HTML_FIELD = 'html';
+
+  // =========================================================================
+  // 2. 浪漫深藍星空與細緻軌道線動態背景（無任何生日元素或劇透）
+  // =========================================================================
+  const canvas = document.getElementById('starCanvas');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0;
+  let stars = [];
+  let sparkles = [];
+  let animRunning = true;
+
+  function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    stars = [];
+    const count = Math.min(130, Math.max(65, Math.floor((W * H) / 11000)));
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: 0.6 + Math.random() * 1.45,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.6 + Math.random() * 1.4,
+        warm: Math.random() < 0.72
+      });
+    }
+
+    sparkles = [];
+    for (let i = 0; i < 10; i++) {
+      sparkles.push({
+        x: (0.08 + Math.random() * 0.84) * W,
+        y: (0.12 + Math.random() * 0.76) * H,
+        size: 4 + Math.random() * 5,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function drawFourPointStar(x, y, size, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = `rgba(243, 217, 164, ${alpha.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.moveTo(0, -size);
+    ctx.quadraticCurveTo(0, 0, size, 0);
+    ctx.quadraticCurveTo(0, 0, 0, size);
+    ctx.quadraticCurveTo(0, 0, -size, 0);
+    ctx.quadraticCurveTo(0, 0, 0, -size);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSky(now) {
+    if (!animRunning) return;
+    requestAnimationFrame(drawSky);
+    const t = now * 0.001;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Delicate orbital arcs (matching the fine geometric line aesthetic)
+    ctx.save();
+    ctx.translate(W * 0.5, H * 0.5);
+    const baseR = Math.min(W, H) * 0.44;
+    ctx.strokeStyle = 'rgba(243, 217, 164, 0.08)';
+    ctx.lineWidth = 1;
+
+    ctx.save();
+    ctx.rotate(-0.28 + Math.sin(t * 0.12) * 0.02);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, baseR * 1.32, baseR * 0.54, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.rotate(0.36 - Math.cos(t * 0.1) * 0.02);
+    ctx.strokeStyle = 'rgba(243, 217, 164, 0.055)';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, baseR * 1.12, baseR * 0.78, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+    ctx.restore();
+
+    // Twinkling champagne-gold & soft-white stars
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const a = 0.22 + 0.65 * (0.5 + 0.5 * Math.sin(t * s.speed + s.phase));
+      ctx.fillStyle = s.warm
+        ? `rgba(243, 217, 164, ${a.toFixed(3)})`
+        : `rgba(220, 232, 255, ${(a * 0.75).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Subtle 4-point star glints
+    for (let i = 0; i < sparkles.length; i++) {
+      const sp = sparkles[i];
+      const a = 0.15 + 0.45 * (0.5 + 0.5 * Math.sin(t * 1.3 + sp.phase));
+      drawFourPointStar(sp.x, sp.y, sp.size, a);
+    }
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+  requestAnimationFrame(drawSky);
+
+  // =========================================================================
+  // 3. DOM 與 Firebase Google 第三方驗證
+  // =========================================================================
+  const gateShell = document.getElementById('gateShell');
+  const statusPillText = document.getElementById('statusPillText');
+  const googleSignInBtn = document.getElementById('googleSignInBtn');
+  const btnLabel = document.getElementById('btnLabel');
+  const statusMsg = document.getElementById('statusMsg');
+  const vaultFrame = document.getElementById('vaultFrame');
+  const signOutBtn = document.getElementById('signOutBtn');
+
+  function setStatus(text, type = '') {
+    statusMsg.textContent = text;
+    statusMsg.className = 'status' + (type ? ' ' + type : '');
+  }
+
+  function setBusy(busy) {
+    googleSignInBtn.disabled = busy;
+    btnLabel.textContent = busy ? '驗證中...' : '使用 Google 帳號進入 →';
+  }
+
+  const sdkReady = typeof window.firebase !== 'undefined';
+  let auth = null;
+  let db = null;
+  let googleProvider = null;
+
+  if (sdkReady) {
+    try {
+      if (!window.firebase.apps.length) {
+        window.firebase.initializeApp(FIREBASE_CONFIG);
+      }
+      auth = window.firebase.auth();
+      db = window.firebase.firestore();
+      googleProvider = new window.firebase.auth.GoogleAuthProvider();
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
+    } catch (err) {
+      setStatus('Firebase 初始化失敗，請重新整理再試。', 'error');
+    }
+  }
+
+  function showProtectedHtml(htmlSource) {
+    animRunning = false;
+    gateShell.classList.add('hidden');
+    vaultFrame.srcdoc = htmlSource;
+    vaultFrame.classList.add('active');
+    signOutBtn.classList.add('active');
+  }
+
+  function resetToGate(msg = '') {
+    vaultFrame.classList.remove('active');
+    vaultFrame.srcdoc = '';
+    signOutBtn.classList.remove('active');
+    gateShell.classList.remove('hidden');
+    statusPillText.textContent = '尚未驗證';
+    if (!animRunning) {
+      animRunning = true;
+      requestAnimationFrame(drawSky);
+    }
+    setBusy(false);
+    if (msg) setStatus(msg, 'error');
+  }
+
+  async function verifyAndLoadVault(user) {
+    if (!user || !user.email) {
+      resetToGate();
+      return;
+    }
+
+    const emailLower = user.email.trim().toLowerCase();
+    if (!ALLOWED_EMAILS.some((e) => e.trim().toLowerCase() === emailLower)) {
+      await auth.signOut();
+      resetToGate('此 Google 帳號不在受邀名單內，請切換為授權帳號。');
+      return;
+    }
+
+    statusPillText.textContent = '驗證通過';
+    setStatus('身分確認完成，正在開啟專屬內容...', 'ok');
+
+    try {
+      const snap = await db.collection(VAULT_COLLECTION).doc(VAULT_DOC_ID).get();
+      if (!snap.exists || !snap.data() || !snap.data()[VAULT_HTML_FIELD]) {
+        await auth.signOut();
+        resetToGate('尚未在 Firestore 建立 private_pages / happy_birthday 的 html 欄位。');
+        return;
+      }
+      showProtectedHtml(String(snap.data()[VAULT_HTML_FIELD]));
+    } catch (err) {
+      await auth.signOut();
+      const code = err && err.code ? err.code : '';
+      if (code === 'permission-denied') {
+        resetToGate('Firestore 權限規則拒絕讀取，請確認已發布 firestore.rules。');
+      } else {
+        resetToGate(`內容讀取失敗（${code || 'unknown'}）。`);
+      }
+    }
+  }
+
+  if (auth) {
+    auth.getRedirectResult().catch(() => {});
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        verifyAndLoadVault(user);
+      }
+    });
+  }
+
+  googleSignInBtn.addEventListener('click', async () => {
+    if (window.location.protocol === 'file:') {
+      setStatus('請透過 GitHub Pages（https://）開啟網頁，本機 file:// 無法執行 Google 驗證。', 'error');
+      return;
+    }
+    if (!sdkReady || !auth || !db || !googleProvider) {
+      setStatus('驗證服務尚未就緒，請檢查網路連線後重試。', 'error');
+      return;
+    }
+
+    setBusy(true);
+    statusPillText.textContent = '驗證中...';
+    setStatus('正在開啟 Google 驗證視窗...', '');
+
+    try {
+      const cred = await auth.signInWithPopup(googleProvider);
+      await verifyAndLoadVault(cred.user);
+    } catch (err) {
+      const code = err && err.code ? err.code : '';
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        try {
+          setStatus('正在跳轉至 Google 驗證頁面...', '');
+          await auth.signInWithRedirect(googleProvider);
+          return;
+        } catch (_) {}
+      }
+      setBusy(false);
+      statusPillText.textContent = '尚未驗證';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        setStatus('已取消登入。', '');
+      } else if (code === 'auth/unauthorized-domain') {
+        setStatus(`尚未授權此網域（${window.location.hostname}），請到 Firebase Authorized domains 新增。`, 'error');
+      } else if (code === 'auth/operation-not-allowed') {
+        setStatus('Firebase 尚未啟用 Google 登入，請到 Sign-in method 開啟。', 'error');
+      } else {
+        setStatus(`Google 驗證失敗（${code || 'unknown'}）。`, 'error');
+      }
+    }
+  });
+
+  signOutBtn.addEventListener('click', async () => {
+    if (auth) {
+      try {
+        await auth.signOut();
+      } catch (_) {}
+    }
+    setStatus('已登出。', '');
+    resetToGate();
+  });
+})();
+</script>
+</body>
+</html>
